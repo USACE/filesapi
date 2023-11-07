@@ -150,7 +150,7 @@ func (obs *ObjectSource) ReadCloser() (io.ReadCloser, error) {
 }
 
 type DeleteObjectInput struct {
-	Path     PathConfig
+	Paths    PathConfig
 	Progress ProgressFunction
 }
 

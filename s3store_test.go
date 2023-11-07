@@ -338,7 +338,7 @@ func TestDeleteObject(t *testing.T) {
 	path := os.Getenv("TEST_COPY_DEST")
 
 	errs := fs.DeleteObjects(DeleteObjectInput{
-		Path: PathConfig{Paths: []string{path}},
+		Paths: PathConfig{Paths: []string{path}},
 	})
 	if len(errs) > 0 {
 		t.Fatal(errs[0])
@@ -365,7 +365,7 @@ func TestDeleteObjects(t *testing.T) {
 	}}
 
 	errs := fs.DeleteObjects(DeleteObjectInput{
-		Path: path,
+		Paths: path,
 	})
 	if len(errs) > 0 {
 		t.Fatal(errs)

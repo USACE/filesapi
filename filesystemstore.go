@@ -111,7 +111,7 @@ func (b *BlockFS) CopyObject(coi CopyObjectInput) error {
 
 func (b *BlockFS) DeleteObjects(doi DeleteObjectInput) []error {
 	var err error
-	for i, p := range doi.Path.Paths {
+	for i, p := range doi.Paths.Paths {
 		if isDir(p) {
 			err = os.RemoveAll(p)
 		} else {

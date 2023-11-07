@@ -252,8 +252,8 @@ func (s3fs *S3FS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 
 func (s3fs *S3FS) DeleteObjects(doi DeleteObjectInput) []error {
 
-	objects := make([]types.ObjectIdentifier, 0, len(doi.Path.Paths))
-	for _, p := range doi.Path.Paths {
+	objects := make([]types.ObjectIdentifier, 0, len(doi.Paths.Paths))
+	for _, p := range doi.Paths.Paths {
 		p := p
 		s3Path := strings.TrimPrefix(p, "/")
 		object := types.ObjectIdentifier{
