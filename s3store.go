@@ -210,6 +210,35 @@ func (s3fs *S3FS) GetObject(goi GetObjectInput) (io.ReadCloser, error) {
 	return output.Body, err
 }
 
+// TODO REWRITE THIS
+func (s3fs *S3FS) ReadAt(p []byte, offset int64) (int, error) {
+	if offset < 0 || offset >= 1447 {
+		return 0, fmt.Errorf("invalid offset")
+	}
+
+	s3bucket := "mmc-storage-6"
+	s3Path := "the_prefix23123/aws-s3-testing/test/TEst.zip"
+	bRange := fmt.Sprintf("bytes=%d-%d", offset, offset+int64(len(p)))
+	input := &s3.GetObjectInput{
+		Bucket: &s3bucket,
+		Key:    &s3Path,
+		Range:  &bRange,
+	}
+	output, err := s3fs.s3client.GetObject(context.TODO(), input)
+	if err != nil {
+		fmt.Println("ERROR ON GETOBJECT \n")
+		return 0, err
+	}
+	n, err := output.Body.Read(p)
+	if err != nil {
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			return n, nil
+		}
+		return 0, err
+	}
+	return n, nil
+}
+
 func (s3fs *S3FS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 	s3Path := strings.TrimPrefix(poi.Dest.Path, "/")
 	reader, err := poi.Source.ReadCloser()

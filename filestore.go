@@ -176,6 +176,9 @@ type FileStore interface {
 	//caller is responsible for closing the resource
 	GetObject(GetObjectInput) (io.ReadCloser, error)
 
+	//used for zip files needs to be changed
+	ReadAt(p []byte, offset int64) (int, error)
+
 	//returns a resource name for the store.
 	//refer to individual implementations for details on the resource name
 	ResourceName() string

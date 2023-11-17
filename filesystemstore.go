@@ -59,17 +59,19 @@ func (b *BlockFS) GetObject(goi GetObjectInput) (io.ReadCloser, error) {
 }
 
 /*
-func (b *BlockFS) DeleteObject(path string) error {
-	var err error
-	if isDir(path) {
-		err = os.RemoveAll(path)
-	} else {
-		err = os.Remove(path)
+	func (b *BlockFS) DeleteObject(path string) error {
+		var err error
+		if isDir(path) {
+			err = os.RemoveAll(path)
+		} else {
+			err = os.Remove(path)
+		}
+		return err
 	}
-	return err
-}
 */
-
+func (b *BlockFS) ReadAt(p []byte, offset int64) (int, error) {
+	return int(offset), nil
+}
 func (b *BlockFS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 	data := poi.Source.Data
 	path := poi.Source.Filepath

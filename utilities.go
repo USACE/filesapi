@@ -1,16 +1,19 @@
 package filesapi
 
 import (
+	"archive/zip"
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
@@ -142,6 +145,257 @@ func sign(data []byte, signingKey []byte) ([]byte, error) {
 	return mac.Sum(nil), nil
 }
 
+type UnZipInput struct {
+
+	//the filestore that will be walked
+	FileStore FileStore
+
+	//the starting directory
+	FilePath PathConfig
+}
+
+// UnZips Directory.
+// client, err := s3.New("AKIAIWOWYYGZ2Y53UL3A", "wJalrXUtnFEMIK7MDENG/bPxRfiCYEXAMPLEKEY")
+// if err != nil {
+//   fmt.Println(err)
+//   return
+// }
+
+// // Get the object from the bucket
+// object, err := client.GetObject("my-bucket", "my-file.zip")
+// if err != nil {
+//   fmt.Println(err)
+//   return
+// }
+
+// // Create a new zip reader
+// reader, err := zip.NewReader(io.NopCloser(object))
+// if err != nil {
+//   fmt.Println(err)
+//   return
+// }
+
+// // Iterate over the zip entries
+// for _, entry := range reader.Entries {
+//   // Get the entry name
+//   name := entry.Name
+
+//   // Create a new file
+//   file, err := client.PutObject("my-bucket", name)
+//   if err != nil {
+// 	fmt.Println(err)
+// 	return
+//   }
+
+//   // Write the entry contents to the file
+//   _, err = file.Write(entry.Open())
+//   if err != nil {
+// 	fmt.Println(err)
+// 	return
+//   }
+// }
+
+// type unbufferedReaderAt struct {
+// 	R io.Reader
+// 	N int64
+// }
+
+// func NewUnbufferedReaderAt(r io.Reader) io.ReaderAt {
+// 	return &unbufferedReaderAt{R: r}
+// }
+
+// func (u *unbufferedReaderAt) ReadAt(p []byte, off int64) (n int, err error) {
+// 	if off < u.N {
+// 		return 0, errors.New("invalid offset")
+// 	}
+// 	diff := off - u.N
+// 	written, err := io.CopyN(io.Discard, u.R, diff)
+// 	u.N += written
+// 	if err != nil {
+// 		return 0, err
+// 	}
+
+// 	n, err = u.R.Read(p)
+// 	u.N += int64(n)
+// 	return
+// }
+
+// // Close the reader
+// reader.Close()
+
+// type PipeWriter struct {
+// 	io.Writer
+// }
+
+// func (w PipeWriter) WriteAt(p []byte, offset int64) (n int, err error) {
+// 	return w.Write(p)
+// }
+
+func UnZip(ui UnZipInput) error {
+	// var err error
+	// zipDir := filepath.Dir(ui.FilePath.Path)
+	// object, err := ui.FileStore.GetObject(GetObjectInput{Path: ui.FilePath})
+	// if err != nil {
+	// 	return err
+	// }
+	// defer object.Close()
+	// ura := NewUnbufferedReaderAt(object)
+	// // reader, err := io.ReadAll(object)
+	// // if err != nil {
+	// // 	fmt.Println(err)
+	// // 	return nil
+	// // }
+	// // // Create a new zip reader
+
+	// z, err := zip.NewReader(ura, 0)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return err
+	// }
+	// for _, entry := range z.File {
+	// 	// Get the entry name
+
+	// 	name := entry.Name
+	// 	outPath := fmt.Sprintf("%s/%s", zipDir, name)
+	// 	// Create a new file
+	// 	file, err := ui.FileStore.PutObject(PutObjectInput{Source: ObjectSource{Reader: entry.ReaderVersion}, Dest: PathConfig{Path: outPath}})
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		return nil
+	// 	}
+
+	// 	// Write the entry contents to the file
+	// 	_, err = file.Write(entry.Open())
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 		return nil
+	// 	}
+	// }
+	// return nil
+	// pipeReader, pipeWriter := io.Pipe()
+
+	// wg := sync.WaitGroup{}
+	// wg.Add(2)
+	// zipDir := filepath.Dir(ui.FilePath.Path)
+	// go func() {
+	// 	object, err := ui.FileStore.GetObject(GetObjectInput{Path: ui.FilePath})
+	// 	io.Copy(pipeWriter, object)
+	// 	//  downloader.Download(ctx, PipeWriter{pipeWriter}, &s3.GetObjectInput{
+	// 	// 	Bucket: aws.String("input-bucket"),
+	// 	// 	Key:    aws.String("mykey"),
+	// 	// })
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	wg.Done()
+	// 	pipeWriter.Close()
+	// }()
+
+	// go func() {
+	// 	data := zipstream.NewReader(pipeReader)
+	// 	for {
+	// 		e, err := data.GetNextEntry()
+	// 		if err != nil {
+	// 			if err != io.EOF {
+	// 				log.Fatal(err)
+	// 			}
+	// 			break
+	// 		}
+	// 		fmt.Printf("NewFile %s", e.Name)
+	// 		rc, err := e.Open()
+	// 		if err != nil {
+	// 			log.Fatal("Failed to Open: ", e.Name)
+	// 		}
+	// 		log.Println("entry name: ", e.Name)
+	// 		log.Println("entry comment: ", e.Comment)
+	// 		log.Println("entry reader version: ", e.ReaderVersion)
+	// 		log.Println("entry modify time: ", e.Modified)
+	// 		log.Println("entry compressed size: ", e.CompressedSize64)
+	// 		log.Println("entry uncompressed size: ", e.UncompressedSize64)
+	// 		log.Println("entry is a dir: ", e.IsDir())
+	// 		fmt.Printf("%s/%s", zipDir, e.Name)
+	// 		_, err = ui.FileStore.PutObject(PutObjectInput{Source: ObjectSource{ContentLength: int64(e.UncompressedSize64), Reader: rc}, Dest: PathConfig{Path: fmt.Sprintf("%s/%s", zipDir, e.Name)}})
+
+	// 		if err != nil {
+	// 			fmt.Printf("Upload error %s \n", err)
+	// 		}
+	// 	}
+	// 	wg.Done()
+	// }()
+
+	// wg.Wait()
+	// object, err := ui.FileStore.GetObject(GetObjectInput{Path: ui.FilePath})
+	// if err != nil {
+	// 	log.Fatalf("Unable to Get Zip File: %s", err)
+	// }
+	// defer object.Close()
+
+	// zr := zipstream.NewReader(object)
+
+	// for {
+	// 	e, err := zr.GetNextEntry()
+	// 	if err == io.EOF {
+	// 		break
+	// 	}
+	// 	if err != nil {
+	// 		log.Fatalf("unable to get next entry: %s", err)
+	// 	}
+
+	// 	log.Println("entry name: ", e.Name)
+	// 	log.Println("entry comment: ", e.Comment)
+	// 	log.Println("entry reader version: ", e.ReaderVersion)
+	// 	log.Println("entry modify time: ", e.Modified)
+	// 	log.Println("entry compressed size: ", e.CompressedSize64)
+	// 	log.Println("entry uncompressed size: ", e.UncompressedSize64)
+	// 	log.Println("entry is a dir: ", e.IsDir())
+
+	// 	if !e.IsDir() {
+	// 		rc, err := e.Open()
+	// 		if err != nil {
+	// 			log.Printf("unable to open zip file: %s", err)
+	// 		}
+	// 		content, err := io.ReadAll(rc)
+	// 		if err != nil {
+	// 			log.Printf("read zip file content fail: %s", err)
+	// 		}
+
+	// 		log.Println("file length:", len(content))
+
+	// 		if uint64(len(content)) != e.UncompressedSize64 {
+	// 			log.Printf("read zip file length not equal with UncompressedSize64")
+	// 		}
+	// 		if err := rc.Close(); err != nil {
+	// 			log.Printf("close zip entry reader fail: %s", err)
+	// 		}
+	// 	}
+	// }
+	// return nil
+	zipDir := filepath.Dir(ui.FilePath.Path)
+	fi, err := ui.FileStore.GetObjectInfo(PathConfig{Path: ui.FilePath.Path})
+	if err != nil {
+		log.Println(err)
+	}
+	size := int64(fi.Size())
+	fmt.Printf("Zip Size %d \n", size)
+
+	reader, err := zip.NewReader(ui.FileStore, size)
+	if err != nil {
+		log.Println(err)
+	}
+	for _, f := range reader.File {
+		fmt.Printf("File %s \n", f.FileHeader.Name)
+		reader, err := f.Open()
+		if err != nil {
+			log.Println(err)
+		}
+		_, err = ui.FileStore.PutObject(PutObjectInput{Source: ObjectSource{ContentLength: int64(f.FileHeader.UncompressedSize64), Reader: reader}, Dest: PathConfig{Path: fmt.Sprintf("%s/%s", zipDir, f.FileHeader.Name)}})
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	return nil
+}
+
 // verify a signed object.  Returns a boolean.  True if verified, false on any error
 // or validation failure
 func VerifySignedObject(options PresignInputOptions) bool {
@@ -186,4 +440,31 @@ func verifyExpiration(qp url.Values) bool {
 	t = t.Add(time.Second * time.Duration(d))
 	return t.After(time.Now().UTC())
 
+}
+
+type ZipInput struct {
+
+	//the filestore that will be walked
+	FileStore FileStore
+
+	//the starting directory
+	DirPath PathConfig
+}
+
+// Zips up Directory.
+// It accomplishes this by recursively walking the file system
+// starting at the dirpath
+func Zip(zi ZipInput) (int64, error) {
+	var count int64 = 0
+	var err error
+
+	err = zi.FileStore.Walk(WalkInput{Path: zi.DirPath}, func(path string, file os.FileInfo) error {
+		count++
+		return nil
+	})
+
+	if err != nil {
+		return -1, err
+	}
+	return count, nil
 }
