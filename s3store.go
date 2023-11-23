@@ -207,7 +207,10 @@ func (s3fs *S3FS) GetObject(goi GetObjectInput) (io.ReadCloser, error) {
 		Range:  &goi.Range,
 	}
 	output, err := s3fs.s3client.GetObject(context.TODO(), input)
-	return output.Body, err
+	if err != nil {
+		return nil, err
+	}
+	return output.Body, nil
 }
 
 func (s3fs *S3FS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
