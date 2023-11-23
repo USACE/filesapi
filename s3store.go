@@ -212,11 +212,11 @@ func (s3fs *S3FS) GetObject(goi GetObjectInput) (io.ReadCloser, error) {
 
 func (s3fs *S3FS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 	s3Path := strings.TrimPrefix(poi.Dest.Path, "/")
-	reader, err := poi.Source.ReadCloser()
+	reader, err := poi.Source.GetReader()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to get the Source Reader: %s\n", err)
 	}
-	defer reader.Close()
+	//defer reader.Close()
 	if poi.Mutipart {
 		uploader := manager.NewUploader(s3fs.s3client)
 		s3output, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{

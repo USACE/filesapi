@@ -126,7 +126,7 @@ type ObjectSource struct {
 
 	//One of the next three sources must be provided
 	//an existing io.ReadCloser
-	Reader io.ReadCloser
+	Reader io.Reader
 
 	//a byte slice of data
 	Data []byte
@@ -135,7 +135,7 @@ type ObjectSource struct {
 	Filepath PathConfig
 }
 
-func (obs *ObjectSource) ReadCloser() (io.ReadCloser, error) {
+func (obs *ObjectSource) GetReader() (io.Reader, error) {
 	if obs.Reader != nil {
 		return obs.Reader, nil
 	}
