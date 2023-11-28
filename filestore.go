@@ -144,7 +144,7 @@ func (obs *ObjectSource) GetReader() (io.Reader, error) {
 	}
 	if obs.Data != nil {
 		obs.ContentLength = int64(len(obs.Data))
-		return io.NopCloser(bytes.NewReader(obs.Data)), nil
+		return bytes.NewReader(obs.Data), nil
 	}
 	return nil, errors.New("Invalid ObjectSource configuration")
 }
