@@ -144,7 +144,7 @@ func (obs *ObjectSource) GetReader() (io.Reader, error) {
 	}
 	if obs.Data != nil {
 		obs.ContentLength = int64(len(obs.Data))
-		return io.NopCloser(bytes.NewReader(obs.Data)), nil
+		return bytes.NewReader(obs.Data), nil
 	}
 	return nil, errors.New("Invalid ObjectSource configuration")
 }
@@ -260,6 +260,56 @@ func NewFileStore(fsconfig interface{}) (FileStore, error) {
 		fs := S3FS{
 			s3client:  s3Client,
 			config:    &scType,
+			delimiter: delimiter,
+			maxKeys:   maxKeys,
+		}
+		return &fs, nil
+
+	case MinioFSConfig:
+		maxKeys := DEFAULTMAXKEYS
+		if scType.MaxKeys > 0 {
+			maxKeys = scType.MaxKeys
+		}
+		delimiter := DEFAULTDELIMITER
+		if scType.Delimiter != "" {
+			delimiter = scType.Delimiter
+		}
+		loadOptions := []func(*config.LoadOptions) error{}
+		if scType.AwsOptions != nil {
+			loadOptions = append(loadOptions, scType.AwsOptions...)
+		}
+		loadOptions = append(loadOptions, config.WithRegion(scType.S3Region))
+
+		resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...any) (aws.Endpoint, error) {
+			return aws.Endpoint{
+				PartitionID:       "aws",
+				URL:               scType.HostAddress,
+				SigningRegion:     scType.S3Region,
+				HostnameImmutable: true,
+			}, nil
+		})
+
+		var creds S3FS_Static
+		var ok bool
+		if creds, ok = scType.Credentials.(S3FS_Static); !ok {
+			return nil, errors.New("Minio Configure requires static credentials")
+		}
+
+		loadOptions = append(
+			loadOptions, config.WithRegion(scType.S3Region),
+			config.WithEndpointResolverWithOptions(resolver),
+			config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(creds.S3Id, creds.S3Key, "")),
+		)
+
+		cfg, err := config.LoadDefaultConfig(context.Background(), loadOptions...)
+		if err != nil {
+			return nil, err
+		}
+		s3Client := s3.NewFromConfig(cfg)
+		s3Type := S3FSConfig(scType.S3FSConfig)
+		fs := S3FS{
+			s3client:  s3Client,
+			config:    &s3Type,
 			delimiter: delimiter,
 			maxKeys:   maxKeys,
 		}

@@ -102,6 +102,11 @@ type S3FSConfig struct {
 	AwsOptions  []func(*config.LoadOptions) error
 }
 
+type MinioFSConfig struct {
+	S3FSConfig
+	HostAddress string
+}
+
 type S3FS struct {
 	s3client                 *s3.Client
 	config                   *S3FSConfig
