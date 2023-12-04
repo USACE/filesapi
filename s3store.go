@@ -235,7 +235,6 @@ func (s3fs *S3FS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 		}
 		return output, err
 	} else {
-		reader = reader.(io.ReadSeekCloser) //need to make sure this can be rewinded for retry.
 		input := &s3.PutObjectInput{
 			Bucket:        &s3fs.config.S3Bucket,
 			Body:          reader,

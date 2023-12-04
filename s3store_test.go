@@ -1,6 +1,7 @@
 package filesapi
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -209,6 +210,61 @@ func TestResourceName(t *testing.T) {
 	if name != testname {
 		t.Fatalf(`Failed Test GetObject, got %s expected %s\n`, name, testname)
 	}
+}
+
+func TestPutEmptyObject(t *testing.T) {
+	config := S3FSConfig{
+		Credentials: S3FS_Attached{
+			Profile: testProfile,
+		},
+		S3Region: os.Getenv("AWS_REGION"),
+		S3Bucket: os.Getenv("AWS_BUCKET"),
+	}
+
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := []byte("")
+	path := PathConfig{Path: os.Getenv("TEST_TEXT_FILE")}
+	poi := PutObjectInput{
+		Source: ObjectSource{
+			Data: data,
+		},
+		Dest: path,
+	}
+	out, err := fs.PutObject(poi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(out.ETag)
+}
+
+func TestPutBytesReader(t *testing.T) {
+	config := S3FSConfig{
+		Credentials: S3FS_Attached{
+			Profile: testProfile,
+		},
+		S3Region: os.Getenv("AWS_REGION"),
+		S3Bucket: os.Getenv("AWS_BUCKET"),
+	}
+
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := []byte(" ")
+	reader := bytes.NewReader(data)
+	path := PathConfig{Path: os.Getenv("TEST_TEXT_FILE")}
+	poi := PutObjectInput{
+		Source: ObjectSource{Reader: reader},
+		Dest:   path,
+	}
+	out, err := fs.PutObject(poi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(out.ETag)
 }
 
 func TestPutObjectBytes(t *testing.T) {
