@@ -33,8 +33,8 @@ func TestProfileCreds(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := fmt.Sprintln(dirs)
-	fmt.Println(out)
-	fmt.Println(testout)
+	//fmt.Println(out)
+	//fmt.Println(testout)
 	if out != testout {
 		t.Fatalf(`Failed Test Profile Creds, got %s expected %s`, out, testout)
 	}

@@ -1,6 +1,7 @@
 package filesapi
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/fs"
@@ -54,21 +55,19 @@ func (b *BlockFS) ResourceName() string {
 }
 
 func (b *BlockFS) GetObject(goi GetObjectInput) (io.ReadCloser, error) {
-	//@TODO implement range
-	return os.Open(goi.Path.Path)
-}
-
-/*
-func (b *BlockFS) DeleteObject(path string) error {
-	var err error
-	if isDir(path) {
-		err = os.RemoveAll(path)
-	} else {
-		err = os.Remove(path)
+	reader, err := os.Open(goi.Path.Path)
+	if goi.Range == "" || err != nil {
+		return reader, err
 	}
-	return err
+	readRange, err := parseRange(goi.Range)
+	if err != nil {
+		return nil, err
+	}
+	buf := make([]byte, readRange.End-readRange.Start)
+	_, err = reader.ReadAt(buf, readRange.Start) //@TODO not sure if I should check the # of bytes read and compare to range
+	reader.ReadAt(buf, readRange.Start)
+	return io.NopCloser(bytes.NewReader(buf)), nil
 }
-*/
 
 func (b *BlockFS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 	data := poi.Source.Data

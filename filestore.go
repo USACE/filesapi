@@ -10,6 +10,8 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,6 +119,12 @@ type PutObjectInput struct {
 	Dest     PathConfig
 	Mutipart bool
 	PartSize int
+}
+
+type Range struct {
+	Unit  string
+	Start int64
+	End   int64
 }
 
 type ObjectSource struct {
@@ -371,4 +379,26 @@ func isDir(path string) bool {
 		return false
 	}
 	return fi.Mode().IsDir()
+}
+
+func parseRange(input string) (Range, error) {
+	re := regexp.MustCompile(`^([a-zA-Z]+)=(\d+)-(\d+)$`)
+	matches := re.FindStringSubmatch(input)
+	r := Range{}
+
+	if len(matches) != 4 {
+		return r, fmt.Errorf("invalid range input format")
+	}
+	r.Unit = matches[1]
+	start, err := strconv.ParseInt(matches[2], 10, 64)
+	if err != nil {
+		return r, err
+	}
+	r.Start = start
+	end, err := strconv.ParseInt(matches[3], 10, 64)
+	if err != nil {
+		return r, err
+	}
+	r.End = end
+	return r, nil
 }
