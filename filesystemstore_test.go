@@ -159,3 +159,22 @@ func TestFssCopyObject(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestFssDeleteObjects(t *testing.T) {
+	config := BlockFSConfig{}
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	paths := PathConfig{Paths: []string{
+		"/Volumes/T7/Working/temp4.txt",
+		"/Volumes/T7/Working/temp5.txt",
+	}}
+	doi := DeleteObjectInput{
+		Paths: paths,
+	}
+	fs.DeleteObjects(doi)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
