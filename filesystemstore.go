@@ -164,7 +164,7 @@ func (b *BlockFS) CopyObject(coi CopyObjectInput) error {
 	}
 	defer dest.Close()
 
-	_, err = io.Copy(src, dest)
+	_, err = io.Copy(dest, src)
 	return err
 }
 

@@ -141,3 +141,21 @@ func TestFssPutObjectByReader(t *testing.T) {
 	}
 	fmt.Println(foo)
 }
+
+func TestFssCopyObject(t *testing.T) {
+	config := BlockFSConfig{}
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srcpath := PathConfig{Path: "/Volumes/T7/Working/temp4.txt"}
+	destpath := PathConfig{Path: "/Volumes/T7/Working/temp5.txt"}
+	coi := CopyObjectInput{
+		Src:  srcpath,
+		Dest: destpath,
+	}
+	err = fs.CopyObject(coi)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
