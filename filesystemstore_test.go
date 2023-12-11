@@ -3,6 +3,7 @@ package filesapi
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"testing"
 )
@@ -72,5 +73,71 @@ func TestFssGetObject(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(buf.String())
+}
 
+func TestFssPutObjectByteSlice(t *testing.T) {
+	config := BlockFSConfig{}
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := PathConfig{Path: "/Volumes/T7/Working/temp2.txt"}
+	data := []byte("This is a test!")
+	poi := PutObjectInput{
+		Source: ObjectSource{
+			Data: data,
+		},
+		Dest: path,
+	}
+	foo, err := fs.PutObject(poi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(foo)
+}
+
+func TestFssPutObjectByFile(t *testing.T) {
+	config := BlockFSConfig{}
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srcpath := PathConfig{Path: "/Volumes/T7/Working/temp2.txt"}
+	destpath := PathConfig{Path: "/Volumes/T7/Working/temp3.txt"}
+	poi := PutObjectInput{
+		Source: ObjectSource{
+			Filepath: srcpath,
+		},
+		Dest: destpath,
+	}
+	foo, err := fs.PutObject(poi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(foo)
+}
+
+func TestFssPutObjectByReader(t *testing.T) {
+	config := BlockFSConfig{}
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srcpath := PathConfig{Path: "/Volumes/T7/Working/temp2.txt"}
+	f, err := os.OpenFile(srcpath.Path, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	destpath := PathConfig{Path: "/Volumes/T7/Working/temp4.txt"}
+	poi := PutObjectInput{
+		Source: ObjectSource{
+			Reader: f,
+		},
+		Dest: destpath,
+	}
+	foo, err := fs.PutObject(poi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(foo)
 }

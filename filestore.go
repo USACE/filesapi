@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -365,12 +364,12 @@ func buildUrl(urlparts []string, pathType PATHTYPE) string {
 	return sanitizePath(b.String())
 }
 
-func getFileMd5(f *os.File) string {
+func getFileMd5(f *os.File) (string, error) {
 	h := md5.New()
 	if _, err := io.Copy(h, f); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
-	return fmt.Sprintf("%x", h.Sum(nil))
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 func isDir(path string) bool {
