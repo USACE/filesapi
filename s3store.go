@@ -512,8 +512,9 @@ func (s3fs *S3FS) CompleteObjectUpload(u CompletedObjectUploadConfig) error {
 	s3path = strings.TrimPrefix(s3path, "/")
 	cp := []types.CompletedPart{}
 	for i, cuId := range u.ChunkUploadIds {
+		etag := cuId
 		cp = append(cp, types.CompletedPart{
-			ETag:       &cuId,
+			ETag:       &etag,
 			PartNumber: int32(i + 1),
 		})
 	}
@@ -548,8 +549,9 @@ func (s3fs *S3FS) Walk(input WalkInput, vistorFunction FileVisitFunction) error 
 			return err
 		}
 		for _, content := range resp.Contents {
-			fileInfo := &S3FileInfo{&content}
-			err = vistorFunction("/"+*content.Key, fileInfo)
+			obj := content
+			fileInfo := &S3FileInfo{&obj}
+			err = vistorFunction("/"+*obj.Key, fileInfo)
 			if err != nil {
 				log.Printf("Visitor Function error: %s\n", err)
 			}

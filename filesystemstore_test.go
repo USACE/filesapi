@@ -1,6 +1,7 @@
 package filesapi
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -174,6 +175,30 @@ func TestFssDeleteObjects(t *testing.T) {
 		Paths: paths,
 	}
 	fs.DeleteObjects(doi)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFssWalk(t *testing.T) {
+	config := BlockFSConfig{}
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := PathConfig{Path: "/Volumes/T7/Working/temp/ffrd"}
+	wi := WalkInput{
+		Path: path,
+	}
+	count := 0
+	err = fs.Walk(wi, func(path string, fileinfo os.FileInfo) error {
+		fmt.Println(path)
+		if count > 10 {
+			return errors.New("Too many!!!!")
+		}
+		count++
+		return nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
