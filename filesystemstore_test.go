@@ -30,7 +30,8 @@ func TestFssGetObjectInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	path := PathConfig{Path: "/Volumes/T7/Working/temp.tif"}
+	//path := PathConfig{Path: "/Volumes/T7/Working/temp.tif"}
+	path := PathConfig{Path: "asdfasdfasdf"}
 	info, err := fs.GetObjectInfo(path)
 	if err != nil {
 		t.Fatal(err)

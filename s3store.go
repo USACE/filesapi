@@ -23,6 +23,8 @@ import (
 const max_copy_chunk_size = 5 * 1024 * 1024
 const max_put_object_copy_size = 5000 * 1024 * 1024
 
+var noSuchKey *types.NoSuchKey
+
 type S3AttributesFileInfo struct {
 	name string
 	*s3.GetObjectAttributesOutput
@@ -135,6 +137,9 @@ func (s3fs *S3FS) GetObjectInfo(path PathConfig) (fs.FileInfo, error) {
 	}
 
 	resp, err := s3fs.s3client.GetObjectAttributes(context.TODO(), params)
+	if errors.As(err, &noSuchKey) {
+		err = &FileNotFoundError{path.Path}
+	}
 	return &S3AttributesFileInfo{s3Path, resp}, err
 }
 
@@ -213,6 +218,9 @@ func (s3fs *S3FS) GetObject(goi GetObjectInput) (io.ReadCloser, error) {
 	}
 	output, err := s3fs.s3client.GetObject(context.TODO(), input)
 	if err != nil {
+		if errors.As(err, &noSuchKey) {
+			err = &FileNotFoundError{goi.Path.Path}
+		}
 		return nil, err
 	}
 	return output.Body, nil

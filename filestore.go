@@ -34,6 +34,14 @@ const (
 
 var chunkSize int64 = 10 * 1024 * 1024
 
+type FileNotFoundError struct {
+	path string
+}
+
+func (f *FileNotFoundError) Error() string {
+	return fmt.Sprintf("File Not Found: %s\n", f.path)
+}
+
 // Path config a PATH or array of PATHS
 // representing a resource.  Array of PATHS
 // is used to support multi-file resources

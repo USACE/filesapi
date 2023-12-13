@@ -104,6 +104,7 @@ func TestGetObjectInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := PathConfig{Path: os.Getenv("TEST_TEXT_FILE")}
+	//path := PathConfig{Path: "asdfasdf"}
 	info, err := fs.GetObjectInfo(path)
 	if err != nil {
 		t.Fatal(err)
@@ -124,6 +125,7 @@ func TestGetObject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	path := PathConfig{Path: os.Getenv("TEST_TEXT_FILE")}
 	reader, err := fs.GetObject(GetObjectInput{Path: path})
 	if err != nil {

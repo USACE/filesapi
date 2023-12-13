@@ -2,6 +2,7 @@ package filesapi
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -14,6 +15,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var pathError *fs.PathError
+
 // @TODO this is kind of clunky.  BlockFSConfig is only used in NewFileStore as a type case so we know to create a Block File Store
 // as of now I don't actually need any config properties
 type BlockFSConfig struct{}
@@ -22,10 +25,10 @@ type BlockFS struct{}
 
 func (b *BlockFS) GetObjectInfo(path PathConfig) (fs.FileInfo, error) {
 	file, err := os.Stat(path.Path)
-	if err != nil {
-		return nil, err
+	if errors.As(err, &pathError) {
+		err = &FileNotFoundError{path.Path}
 	}
-	return file, nil
+	return file, err
 }
 
 func (b *BlockFS) GetDir(path PathConfig) (*[]FileStoreResultObject, error) {
@@ -57,6 +60,9 @@ func (b *BlockFS) ResourceName() string {
 func (b *BlockFS) GetObject(goi GetObjectInput) (io.ReadCloser, error) {
 	reader, err := os.Open(goi.Path.Path)
 	if goi.Range == "" || err != nil {
+		if errors.As(err, &pathError) {
+			err = &FileNotFoundError{goi.Path.Path}
+		}
 		return reader, err
 	}
 	readRange, err := parseRange(goi.Range)
@@ -65,7 +71,6 @@ func (b *BlockFS) GetObject(goi GetObjectInput) (io.ReadCloser, error) {
 	}
 	buf := make([]byte, readRange.End-readRange.Start)
 	_, err = reader.ReadAt(buf, readRange.Start) //@TODO not sure if I should check the # of bytes read and compare to range
-	reader.ReadAt(buf, readRange.Start)
 	return io.NopCloser(bytes.NewReader(buf)), nil
 }
 func (b *BlockFS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
@@ -110,46 +115,6 @@ func (b *BlockFS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 	foo.ETag = md5
 	return &foo, err
 }
-
-/*
-func (b *BlockFS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
-	data := poi.Source.Data
-	path := poi.Dest
-	foo := FileOperationOutput{}
-	switch {
-	case poi.Source.Data != nil:
-		if len(data) == 0 {
-			err := os.MkdirAll(filepath.Dir(path.Path), os.ModePerm)
-			return &foo, err
-		} else {
-			f, err := os.OpenFile(path.Path, os.O_RDWR|os.O_CREATE, os.ModePerm)
-			if err != nil {
-				return nil, err
-			}
-			defer f.Close()
-			_, err = f.Write(data)
-			if err != nil {
-				return nil, err
-			}
-			md5, err := getFileMd5(f)
-			if err != nil {
-				return nil, err
-			}
-			foo.ETag = md5
-			return &foo, err
-		}
-	case poi.Source.Filepath.Path!="":
-		src,err:=os.OpenFile(poi.Source.Filepath.Path, os.O_RDONLY,os.ModePerm)
-		if err != nil {
-			return nil, err
-		}
-		defer src.Close()
-
-
-	}
-
-}
-*/
 
 func (b *BlockFS) CopyObject(coi CopyObjectInput) error {
 	src, err := os.Open(coi.Src.Path)
