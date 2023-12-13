@@ -40,6 +40,18 @@ func TestFssGetObjectInfo(t *testing.T) {
 	fmt.Println(out)
 }
 
+func TestFssFileExists(t *testing.T) {
+	config := BlockFSConfig{}
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := "/Volumes/T7/Working/temp.tif"
+	fmt.Println(FileExists(fs, path))
+	path = "asdfasdfasdf"
+	fmt.Println(FileExists(fs, path))
+}
+
 func TestFssGetObject(t *testing.T) {
 	config := BlockFSConfig{}
 	fs, err := NewFileStore(config)

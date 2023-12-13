@@ -24,6 +24,8 @@ const (
 	maxExpiration       int    = 86400 * 30 //30 days
 )
 
+var fileNotFoundError *FileNotFoundError
+
 type Retryer[T any] struct {
 
 	//Max retry attempts
@@ -186,4 +188,9 @@ func verifyExpiration(qp url.Values) bool {
 	t = t.Add(time.Second * time.Duration(d))
 	return t.After(time.Now().UTC())
 
+}
+
+func FileExists(fs FileStore, path string) bool {
+	_, err := fs.GetObjectInfo(PathConfig{Path: path})
+	return !errors.As(err, &fileNotFoundError)
 }
