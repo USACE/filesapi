@@ -19,9 +19,13 @@ var pathError *fs.PathError
 
 // @TODO this is kind of clunky.  BlockFSConfig is only used in NewFileStore as a type case so we know to create a Block File Store
 // as of now I don't actually need any config properties
-type BlockFSConfig struct{}
+type BlockFSConfig struct {
+	ChunkSize int64
+}
 
-type BlockFS struct{}
+type BlockFS struct {
+	Config BlockFSConfig
+}
 
 func (b *BlockFS) GetObjectInfo(path PathConfig) (fs.FileInfo, error) {
 	file, err := os.Stat(path.Path)
@@ -176,7 +180,7 @@ func (b *BlockFS) WriteChunk(u UploadConfig) (UploadResult, error) {
 		return result, err
 	}
 	defer f.Close()
-	_, err = f.WriteAt(u.Data, (int64(u.ChunkId) * chunkSize))
+	_, err = f.WriteAt(u.Data, (int64(u.ChunkId) * b.Config.ChunkSize))
 	result.WriteSize = len(u.Data)
 	return result, err
 }

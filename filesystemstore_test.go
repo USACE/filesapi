@@ -216,3 +216,15 @@ func TestFssWalk(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+/*
+//initialize a multipart upload sessions
+	InitializeObjectUpload(UploadConfig) (UploadResult, error)
+
+	//write a chunk in a multipart upload session
+	WriteChunk(UploadConfig) (UploadResult, error)
+
+	//complete a multipart upload session
+	CompleteObjectUpload(CompletedObjectUploadConfig) error
+
+*/

@@ -32,7 +32,7 @@ const (
 	DEFAULTDELIMITER string = "/"
 )
 
-var chunkSize int64 = 10 * 1024 * 1024
+var defaultChunkSize int64 = 10 * 1024 * 1024
 
 type FileNotFoundError struct {
 	path string
@@ -218,10 +218,14 @@ type FileStore interface {
 	Walk(WalkInput, FileVisitFunction) error
 }
 
-func NewFileStore(fsconfig interface{}) (FileStore, error) {
+func NewFileStore(fsconfig any) (FileStore, error) {
 	switch scType := fsconfig.(type) {
 	case BlockFSConfig:
-		fs := BlockFS{}
+		config := fsconfig.(BlockFSConfig)
+		if config.ChunkSize == 0 {
+			config.ChunkSize = defaultChunkSize
+		}
+		fs := BlockFS{fsconfig.(BlockFSConfig)}
 		return &fs, nil
 	case S3FSConfig:
 		var cfg aws.Config
