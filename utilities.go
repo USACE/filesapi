@@ -194,3 +194,7 @@ func FileExists(fs FileStore, path string) bool {
 	_, err := fs.GetObjectInfo(PathConfig{Path: path})
 	return !errors.As(err, &fileNotFoundError)
 }
+
+func Ref[T any](t T) *T {
+	return &t
+}

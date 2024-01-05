@@ -35,7 +35,10 @@ func (obj *S3AttributesFileInfo) Name() string {
 }
 
 func (obj *S3AttributesFileInfo) Size() int64 {
-	return obj.ObjectSize
+	if obj.ObjectSize == nil {
+		return 0
+	}
+	return *obj.ObjectSize
 }
 
 func (obj *S3AttributesFileInfo) Mode() os.FileMode {
@@ -63,7 +66,10 @@ func (obj *S3FileInfo) Name() string {
 }
 
 func (obj *S3FileInfo) Size() int64 {
-	return obj.s3.Size
+	if obj.s3.Size == nil {
+		return 0
+	}
+	return *obj.s3.Size
 }
 
 func (obj *S3FileInfo) Mode() os.FileMode {
@@ -157,7 +163,7 @@ func (s3fs *S3FS) GetDir(path PathConfig) (*[]FileStoreResultObject, error) {
 			Bucket:            &s3fs.config.S3Bucket,
 			Prefix:            &s3Path,
 			Delimiter:         &s3fs.delimiter,
-			MaxKeys:           s3fs.maxKeys,
+			MaxKeys:           &s3fs.maxKeys,
 			ContinuationToken: continuationToken,
 		}
 
@@ -195,7 +201,7 @@ func (s3fs *S3FS) GetDir(path PathConfig) (*[]FileStoreResultObject, error) {
 		w := FileStoreResultObject{
 			ID:         count,
 			Name:       filepath.Base(*object.Key),
-			Size:       strconv.FormatInt(object.Size, 10),
+			Size:       strconv.FormatInt(*object.Size, 10),
 			Path:       filepath.Dir(*object.Key),
 			Type:       filepath.Ext(*object.Key),
 			IsDir:      false,
@@ -251,7 +257,7 @@ func (s3fs *S3FS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 		input := &s3.PutObjectInput{
 			Bucket:        &s3fs.config.S3Bucket,
 			Body:          reader,
-			ContentLength: poi.Source.ContentLength,
+			ContentLength: &poi.Source.ContentLength,
 			Key:           &s3Path,
 		}
 		s3output, err := s3fs.s3client.PutObject(context.TODO(), input)
@@ -282,7 +288,7 @@ func (s3fs *S3FS) DeleteObjects(doi DeleteObjectInput) []error {
 		Bucket: &s3fs.config.S3Bucket,
 		Delete: &types.Delete{
 			Objects: objects,
-			Quiet:   false,
+			Quiet:   Ref(false),
 		},
 	}
 
@@ -418,7 +424,7 @@ func (s3fs *S3FS) copyPartsTo(sourcePath PathConfig, destPath PathConfig, fileSi
 			CopySource:      &source,
 			CopySourceRange: &copyRange,
 			Key:             &dest,
-			PartNumber:      partNumber,
+			PartNumber:      &partNumber,
 			UploadId:        &uploadId,
 		}
 
@@ -440,7 +446,7 @@ func (s3fs *S3FS) copyPartsTo(sourcePath PathConfig, destPath PathConfig, fileSi
 			etag := strings.Trim(*partResp.CopyPartResult.ETag, "\"")
 			cPart := types.CompletedPart{
 				ETag:       &etag,
-				PartNumber: partNum,
+				PartNumber: &partNum,
 			}
 			parts = append(parts, cPart)
 			log.Printf("Successfully upload part %d of %s\n", partNumber, uploadId)
@@ -499,9 +505,9 @@ func (s3fs *S3FS) WriteChunk(u UploadConfig) (UploadResult, error) {
 		Body:          bytes.NewReader(u.Data),
 		Bucket:        &s3fs.config.S3Bucket,
 		Key:           &s3path,
-		PartNumber:    partNumber,
+		PartNumber:    &partNumber,
 		UploadId:      &u.UploadId,
-		ContentLength: int64(len(u.Data)),
+		ContentLength: Ref(int64(len(u.Data))),
 	}
 	result, err := s3fs.s3client.UploadPart(context.TODO(), partInput)
 
@@ -523,7 +529,7 @@ func (s3fs *S3FS) CompleteObjectUpload(u CompletedObjectUploadConfig) error {
 		etag := cuId
 		cp = append(cp, types.CompletedPart{
 			ETag:       &etag,
-			PartNumber: int32(i + 1),
+			PartNumber: Ref(int32(i + 1)),
 		})
 	}
 	input := &s3.CompleteMultipartUploadInput{
@@ -546,7 +552,7 @@ func (s3fs *S3FS) Walk(input WalkInput, vistorFunction FileVisitFunction) error 
 		Bucket:    &s3fs.config.S3Bucket,
 		Prefix:    &s3Path,
 		Delimiter: &s3delim,
-		MaxKeys:   s3fs.maxKeys,
+		MaxKeys:   &s3fs.maxKeys,
 	}
 
 	truncatedListing := true
@@ -574,7 +580,11 @@ func (s3fs *S3FS) Walk(input WalkInput, vistorFunction FileVisitFunction) error 
 		if !s3fs.ignoreContinuationOnWalk {
 			query.ContinuationToken = resp.NextContinuationToken
 		}
-		truncatedListing = resp.IsTruncated
+		if resp.IsTruncated == nil {
+			truncatedListing = false
+		} else {
+			truncatedListing = *resp.IsTruncated
+		}
 		count++
 	}
 	return nil
