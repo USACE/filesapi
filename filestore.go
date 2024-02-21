@@ -256,6 +256,8 @@ func NewFileStore(fsconfig any) (FileStore, error) {
 				credentials.NewStaticCredentialsProvider(cred.S3Id, cred.S3Key, ""),
 			))
 		case S3FS_Attached:
+			//if attached credentials are used and cred.Profile=="", then the AWS default credential chain is invoked
+			//otherwise add the profile.
 			if cred.Profile != "" {
 				loadOptions = append(loadOptions, config.WithSharedConfigProfile(cred.Profile))
 			}
