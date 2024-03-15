@@ -51,6 +51,13 @@ type PathConfig struct {
 	Paths []string
 }
 
+func (pc PathConfig) IsNil() bool {
+	if len(pc.Paths) == 0 && pc.Path == "" {
+		return true
+	}
+	return false
+}
+
 type FileOperationOutput struct {
 
 	//AWS Etag for S3 results.  MD5 hash for file system operations
@@ -137,7 +144,7 @@ type Range struct {
 type ObjectSource struct {
 
 	//optional content length.  Will be determined automatically for byte slice sources (i.e. Data)
-	ContentLength int64
+	ContentLength *int64
 
 	//One of the next three sources must be provided
 	//an existing io.ReadCloser
@@ -158,7 +165,8 @@ func (obs *ObjectSource) GetReader() (io.Reader, error) {
 		return os.Open(obs.Filepath.Path)
 	}
 	if obs.Data != nil {
-		obs.ContentLength = int64(len(obs.Data))
+		cl := int64(len(obs.Data))
+		obs.ContentLength = &cl
 		return bytes.NewReader(obs.Data), nil
 	}
 	return nil, errors.New("Invalid ObjectSource configuration")

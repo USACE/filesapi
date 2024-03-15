@@ -257,7 +257,7 @@ func (s3fs *S3FS) PutObject(poi PutObjectInput) (*FileOperationOutput, error) {
 		input := &s3.PutObjectInput{
 			Bucket:        &s3fs.config.S3Bucket,
 			Body:          reader,
-			ContentLength: &poi.Source.ContentLength,
+			ContentLength: poi.Source.ContentLength,
 			Key:           &s3Path,
 		}
 		s3output, err := s3fs.s3client.PutObject(context.TODO(), input)
