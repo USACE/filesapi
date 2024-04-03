@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	signatureQueryName  string = "X-Amx-Signature"
-	expirationQueryName string = "X-Amx-Expiration"
-	timeQueryName       string = "X-Amx-Date"
+	signatureQueryName  string = "X-Amz-Signature"
+	expirationQueryName string = "X-Amz-Expiration"
+	credentialQueryName string = "X-Amz-Credential"
+	timeQueryName       string = "X-Amz-Date"
 	timeFormat          string = "20060102T150405Z"
 	maxExpiration       int    = 86400 * 30 //30 days
 )
@@ -109,6 +110,9 @@ type PresignInputOptions struct {
 
 	//Expiration time in seconds
 	Expiration int
+
+	//X-Amz-Credential
+	Credential string
 }
 
 // Signs a uri object.  Object should be a full uri with query parameters.
@@ -126,6 +130,7 @@ func PresignObject(options PresignInputOptions) (string, error) {
 	qp := uri.Query()
 	qp.Add(timeQueryName, time.Now().UTC().Format(timeFormat))
 	qp.Add(expirationQueryName, strconv.Itoa(options.Expiration))
+	qp.Add(credentialQueryName, b64.StdEncoding.EncodeToString([]byte(options.Credential)))
 	uri.RawQuery = qp.Encode()
 	signature, err := sign([]byte(uri.String()), options.SigningKey)
 	sEnc := b64.StdEncoding.EncodeToString(signature)
