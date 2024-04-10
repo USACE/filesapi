@@ -159,6 +159,10 @@ type ObjectSource struct {
 
 func (obs *ObjectSource) GetReader() (io.Reader, error) {
 	if obs.Reader != nil {
+		if br, ok := obs.Reader.(*bytes.Reader); ok {
+			cl := br.Size()
+			obs.ContentLength = &cl
+		}
 		return obs.Reader, nil
 	}
 	if obs.Filepath.Path != "" {
@@ -169,7 +173,7 @@ func (obs *ObjectSource) GetReader() (io.Reader, error) {
 		obs.ContentLength = &cl
 		return bytes.NewReader(obs.Data), nil
 	}
-	return nil, errors.New("Invalid ObjectSource configuration")
+	return nil, errors.New("invalid objectsource configuration")
 }
 
 type DeleteObjectInput struct {
