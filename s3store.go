@@ -150,6 +150,7 @@ func (s3fs *S3FS) GetObjectInfo(path PathConfig) (fs.FileInfo, error) {
 }
 
 // @TODO should this return an error on failure to list?  Think so!
+// @TODO change argument to ListFileInput
 func (s3fs *S3FS) GetDir(path PathConfig) (*[]FileStoreResultObject, error) {
 	s3Path := strings.TrimPrefix(path.Path, "/")
 
@@ -174,10 +175,10 @@ func (s3fs *S3FS) GetDir(path PathConfig) (*[]FileStoreResultObject, error) {
 		}
 		prefixes = append(prefixes, resp.CommonPrefixes...)
 		objects = append(objects, resp.Contents...)
-		if resp.ContinuationToken == nil {
+		if resp.NextContinuationToken == nil {
 			shouldContinue = false
 		} else {
-			continuationToken = resp.ContinuationToken
+			continuationToken = resp.NextContinuationToken
 		}
 	}
 
