@@ -149,6 +149,140 @@ func (s3fs *S3FS) GetObjectInfo(path PathConfig) (fs.FileInfo, error) {
 	return &S3AttributesFileInfo{s3Path, resp}, err
 }
 
+func (s3fs *S3FS) ListDir(input ListDirInput) (*[]FileStoreResultObject, error) {
+	s3Path := strings.TrimPrefix(input.Path.Path, "/")
+
+	var continuationToken *string = nil
+	prefixes := []types.CommonPrefix{}
+	objects := []types.Object{}
+
+	params := &s3.ListObjectsV2Input{
+		Bucket:            &s3fs.config.S3Bucket,
+		Prefix:            &s3Path,
+		Delimiter:         &s3fs.delimiter,
+		MaxKeys:           &s3fs.maxKeys,
+		ContinuationToken: continuationToken,
+	}
+
+	var err error
+	if input.Filter == "" && input.Size <= DEFAULTMAXKEYS {
+		prefixes, objects, err = s3fs.getPage(input, params, prefixes, objects)
+	} else {
+		prefixes, objects, err = s3fs.getAllUpToMax(input, params)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("Unable to get page: %s\n", err)
+	}
+
+	result := []FileStoreResultObject{}
+	var count int = 0
+	for _, cp := range prefixes {
+		w := FileStoreResultObject{
+			ID:         count,
+			Name:       filepath.Base(*cp.Prefix),
+			Size:       "",
+			Path:       *cp.Prefix,
+			Type:       "",
+			IsDir:      true,
+			ModifiedBy: "",
+		}
+		count++
+		result = append(result, w)
+	}
+
+	for _, object := range objects {
+		w := FileStoreResultObject{
+			ID:         count,
+			Name:       filepath.Base(*object.Key),
+			Size:       strconv.FormatInt(*object.Size, 10),
+			Path:       filepath.Dir(*object.Key),
+			Type:       filepath.Ext(*object.Key),
+			IsDir:      false,
+			Modified:   *object.LastModified,
+			ModifiedBy: "",
+		}
+		count++
+		result = append(result, w)
+	}
+
+	return &result, nil
+}
+
+func (s3fs *S3FS) getAllUpToMax(input ListDirInput, params *s3.ListObjectsV2Input) ([]types.CommonPrefix, []types.Object, error) {
+	shouldContinue := true
+	if input.Size > 0 && input.Size < DEFAULTMAXKEYS {
+		params.MaxKeys = &input.Size
+	}
+	var continuationToken *string = nil
+	prefixes := []types.CommonPrefix{}
+	objects := []types.Object{}
+	var objcount int32
+
+	for shouldContinue {
+		params.ContinuationToken = continuationToken
+		resp, err := s3fs.s3client.ListObjectsV2(context.TODO(), params)
+		if err != nil {
+			log.Printf("failed to list objects in the bucket - %v", err)
+			return nil, nil, err
+		}
+		if input.Filter != "" {
+			for i := 0; i < len(resp.CommonPrefixes); i++ {
+				if objcount >= input.Size {
+					break
+				}
+				if strings.Contains(*resp.CommonPrefixes[i].Prefix, input.Filter) {
+					prefixes = append(prefixes, resp.CommonPrefixes[i])
+					objcount++
+				}
+			}
+			for i := 0; i < len(resp.Contents); i++ {
+				if objcount >= input.Size {
+					break
+				}
+				if strings.Contains(*resp.Contents[i].Key, input.Filter) {
+					objects = append(objects, resp.Contents[i])
+					objcount++
+				}
+			}
+		} else {
+			prefixes = append(prefixes, resp.CommonPrefixes...)
+			objects = append(objects, resp.Contents...)
+		}
+
+		if resp.NextContinuationToken == nil || input.Size <= int32((len(prefixes)+len(objects))) {
+			shouldContinue = false
+		} else {
+			continuationToken = resp.NextContinuationToken
+		}
+	}
+	return prefixes, objects, nil
+}
+
+func (s3fs *S3FS) getPage(input ListDirInput, params *s3.ListObjectsV2Input, prefixes []types.CommonPrefix, objects []types.Object) ([]types.CommonPrefix, []types.Object, error) {
+	currentPage := 0
+	if input.Size > 0 {
+		params.MaxKeys = &input.Size
+	}
+	paginator := s3.NewListObjectsV2Paginator(s3fs.s3client, params)
+	for paginator.HasMorePages() {
+		if currentPage == input.Page {
+			page, err := paginator.NextPage(context.TODO())
+			if err != nil {
+				return nil, nil, fmt.Errorf("unable to get page, %v", err)
+			}
+			prefixes = append(prefixes, page.CommonPrefixes...)
+			objects = append(objects, page.Contents...)
+			break
+		}
+		currentPage++
+		_, err := paginator.NextPage(context.TODO())
+		if err != nil {
+			return nil, nil, fmt.Errorf("unable to get page, %v", err)
+		}
+	}
+	return prefixes, objects, nil
+}
+
 // @TODO should this return an error on failure to list?  Think so!
 // @TODO change argument to ListFileInput
 func (s3fs *S3FS) GetDir(path PathConfig) (*[]FileStoreResultObject, error) {
@@ -641,3 +775,12 @@ func buildCopySourceRange(start int64, objectSize int64) string {
 	stopRange := strconv.FormatInt(end, 10)
 	return "bytes=" + startRange + "-" + stopRange
 }
+
+/*
+ create prrfix/object slices
+ while shouldcontinue
+   get list
+
+   add list files/prefixes to slices
+   if continuation keep looping
+*/

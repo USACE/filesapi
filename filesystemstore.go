@@ -35,6 +35,28 @@ func (b *BlockFS) GetObjectInfo(path PathConfig) (fs.FileInfo, error) {
 	return file, err
 }
 
+func (b *BlockFS) ListDir(input ListDirInput) (*[]FileStoreResultObject, error) {
+	dirContents, err := ioutil.ReadDir(input.Path.Path)
+	if err != nil {
+		return nil, err
+	}
+	objects := make([]FileStoreResultObject, len(dirContents))
+	for i, f := range dirContents {
+		size := strconv.FormatInt(f.Size(), 10)
+		objects[i] = FileStoreResultObject{
+			ID:         i,
+			Name:       f.Name(),
+			Size:       size,
+			Path:       input.Path.Path,
+			Type:       filepath.Ext(f.Name()),
+			IsDir:      f.IsDir(),
+			Modified:   f.ModTime(),
+			ModifiedBy: "",
+		}
+	}
+	return &objects, nil
+}
+
 func (b *BlockFS) GetDir(path PathConfig) (*[]FileStoreResultObject, error) {
 	dirContents, err := ioutil.ReadDir(path.Path)
 	if err != nil {

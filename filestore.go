@@ -193,9 +193,10 @@ type CopyObjectInput struct {
 }
 
 type ListDirInput struct {
-	Path      PathConfig
-	Page      int
-	MaxNumber int
+	Path   PathConfig
+	Page   int
+	Size   int32
+	Filter string
 }
 
 type FileStore interface {

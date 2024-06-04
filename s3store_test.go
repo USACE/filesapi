@@ -63,6 +63,36 @@ func TestStaticCreds(t *testing.T) {
 	fmt.Println(dirs)
 }
 
+func TestListDir(t *testing.T) {
+	config := S3FSConfig{
+		Credentials: S3FS_Attached{
+			Profile: testProfile,
+		},
+		S3Region: os.Getenv("AWS_REGION"),
+		S3Bucket: os.Getenv("AWS_BUCKET"),
+	}
+
+	fs, err := NewFileStore(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := PathConfig{Path: os.Getenv("TEST_DIR")}
+	input := ListDirInput{
+		Path: path,
+		Page: 0,
+		Size: 500,
+		//Filter: "8",
+	}
+	dirs, err := fs.ListDir(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range *dirs {
+		fmt.Println(d)
+	}
+
+}
+
 func TestGetDir(t *testing.T) {
 	config := S3FSConfig{
 		Credentials: S3FS_Attached{
