@@ -78,10 +78,10 @@ func TestListDir(t *testing.T) {
 	}
 	path := PathConfig{Path: os.Getenv("TEST_DIR")}
 	input := ListDirInput{
-		Path: path,
-		Page: 0,
-		Size: 500,
-		//Filter: "8",
+		Path:   path,
+		Page:   1,
+		Size:   5,
+		Filter: "8",
 	}
 	dirs, err := fs.ListDir(input)
 	if err != nil {
