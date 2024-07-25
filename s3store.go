@@ -153,8 +153,8 @@ func (s3fs *S3FS) ListDir(input ListDirInput) (*[]FileStoreResultObject, error) 
 	s3Path := strings.TrimPrefix(input.Path.Path, "/")
 
 	var continuationToken *string = nil
-	prefixes := []types.CommonPrefix{}
-	objects := []types.Object{}
+	var prefixes []types.CommonPrefix
+	var objects []types.Object
 
 	params := &s3.ListObjectsV2Input{
 		Bucket:            &s3fs.config.S3Bucket,
@@ -166,7 +166,7 @@ func (s3fs *S3FS) ListDir(input ListDirInput) (*[]FileStoreResultObject, error) 
 
 	var err error
 	if input.Filter == "" && input.Size <= DEFAULTMAXKEYS {
-		prefixes, objects, err = s3fs.getPage(input, params, prefixes, objects)
+		prefixes, objects, err = s3fs.getPage(input, params)
 	} else {
 		prefixes, objects, err = s3fs.getAllUpToMax(input, params)
 	}
@@ -258,11 +258,15 @@ func (s3fs *S3FS) getAllUpToMax(input ListDirInput, params *s3.ListObjectsV2Inpu
 	return prefixes, objects, nil
 }
 
-func (s3fs *S3FS) getPage(input ListDirInput, params *s3.ListObjectsV2Input, prefixes []types.CommonPrefix, objects []types.Object) ([]types.CommonPrefix, []types.Object, error) {
+// Uses the AWS Pagenator to get a single page of unfiltered results
+// for a given page number and page size
+func (s3fs *S3FS) getPage(input ListDirInput, params *s3.ListObjectsV2Input) ([]types.CommonPrefix, []types.Object, error) {
 	currentPage := 0
 	if input.Size > 0 {
 		params.MaxKeys = &input.Size
 	}
+	prefixes := []types.CommonPrefix{}
+	objects := []types.Object{}
 	paginator := s3.NewListObjectsV2Paginator(s3fs.s3client, params)
 	for paginator.HasMorePages() {
 		if currentPage == input.Page {
