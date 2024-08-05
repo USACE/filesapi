@@ -123,6 +123,10 @@ type S3FS struct {
 	ignoreContinuationOnWalk bool //internal use only
 }
 
+func (s3fs *S3FS) GetClient() *s3.Client {
+	return s3fs.s3client
+}
+
 func (s3fs *S3FS) GetConfig() *S3FSConfig {
 	return s3fs.config
 }
