@@ -49,7 +49,12 @@ func (obj *S3AttributesFileInfo) ModTime() time.Time {
 	return time.Now()
 }
 
+// if the object has attributes, then it is a "file"
+// if not, assume it is a traversable path
 func (obj *S3AttributesFileInfo) IsDir() bool {
+	if obj.GetObjectAttributesOutput == nil {
+		return true
+	}
 	return false
 }
 
@@ -445,19 +450,31 @@ func (s3fs *S3FS) deleteListImpl(input *s3.DeleteObjectsInput, pf ProgressFuncti
 	delBuffer := []types.ObjectIdentifier{}
 	count := 0
 	for _, obj := range input.Delete.Objects {
-		//s3fs.Walk(*obj.Key, func(path string, file os.FileInfo) error {
-		s3fs.Walk(WalkInput{Path: PathConfig{Path: *obj.Key}, Progress: pf}, func(path string, file os.FileInfo) error {
-			key := file.Name()
-			delBuffer = append(delBuffer, types.ObjectIdentifier{Key: &key})
-			if len(delBuffer) >= maxDelBufferSize {
-				err := s3fs.flushDeletes(delBuffer)
-				if err != nil {
-					log.Printf("Error in batch delete operation: %s\n", err)
-				}
+		info, err1 := s3fs.GetObjectInfo(PathConfig{Path: *obj.Key})
+		if err1 != nil {
+			//if we get a filenotfound error, then attempt to traverse it as a path
+			//otherwise quit
+			if err1, ok := err1.(*FileNotFoundError); !ok {
+				log.Printf("Error getting delete object info for %s: %s\n", *obj.Key, err1)
+				return []error{err1}
 			}
-			count++
-			return nil
-		})
+		}
+		if info.IsDir() {
+			s3fs.Walk(WalkInput{Path: PathConfig{Path: *obj.Key}, Progress: pf}, func(path string, file os.FileInfo) error {
+				key := file.Name()
+				delBuffer = append(delBuffer, types.ObjectIdentifier{Key: &key})
+				if len(delBuffer) >= maxDelBufferSize {
+					err := s3fs.flushDeletes(delBuffer)
+					if err != nil {
+						log.Printf("Error in batch delete operation: %s\n", err)
+					}
+				}
+				count++
+				return nil
+			})
+		} else {
+			delBuffer = append(delBuffer, types.ObjectIdentifier{Key: obj.Key})
+		}
 
 		//flush any remaining deletes
 		err := s3fs.flushDeletes(delBuffer)
