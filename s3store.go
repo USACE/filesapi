@@ -754,10 +754,6 @@ func (s3fs *S3FS) Walk(input WalkInput, vistorFunction FileVisitFunction) error 
 these functions are not part of the filestore interface and are unique to the S3FS
 */
 
-func (s3fs *S3FS) GetClient() *s3.Client {
-	return s3fs.s3client
-}
-
 func (s3fs *S3FS) GetPresignedUrl(path PathConfig, days int) (string, error) {
 	s3Path := strings.TrimPrefix(path.Path, "/")
 	presignClient := s3.NewPresignClient(s3fs.s3client)
