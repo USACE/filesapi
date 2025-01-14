@@ -192,7 +192,20 @@ type CopyObjectInput struct {
 	Progress ProgressFunction
 }
 
+type ListDirInput struct {
+	Path   PathConfig
+	Page   int
+	Size   int32
+	Filter string
+}
+
 type FileStore interface {
+
+	//requests a slice of resources at a store directory
+	//use instead of GetDir
+	ListDir(input ListDirInput) (*[]FileStoreResultObject, error)
+
+	//@Depricated
 	//requests a slice of resources at a store directory
 	GetDir(path PathConfig) (*[]FileStoreResultObject, error)
 
