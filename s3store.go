@@ -227,6 +227,15 @@ func (s3fs *S3FS) getAllUpToMax(input ListDirInput, params *s3.ListObjectsV2Inpu
 	objects := []types.Object{}
 	var objcount int32
 
+	//handle filter
+	if len(input.Filter) > 0 && string(input.Filter[0]) != "*" {
+		newPrefix := (*params.Prefix) + input.Filter
+		params.Prefix = &newPrefix
+		input.Filter = ""
+	} else {
+		input.Filter = input.Filter[1:]
+	}
+
 	for shouldContinue {
 		params.ContinuationToken = continuationToken
 		resp, err := s3fs.s3client.ListObjectsV2(context.TODO(), params)
