@@ -477,10 +477,14 @@ func (s3fs *S3FS) deleteListImpl(input *s3.DeleteObjectsInput, pf ProgressFuncti
 				key := file.Name()
 				delBuffer = append(delBuffer, types.ObjectIdentifier{Key: &key})
 				if len(delBuffer) >= maxDelBufferSize {
-					err := s3fs.flushDeletes(delBuffer)
-					if err != nil {
-						log.Printf("Error in batch delete operation: %s\n", err)
+					errs := s3fs.flushDeletes(delBuffer)
+					if len(errs) > 0 {
+						log.Println("Error in batch delete operation")
+						for _, err := range errs {
+							log.Println(err)
+						}
 					}
+					delBuffer = delBuffer[:0] //truncate the buffer
 				}
 				count++
 				return nil
@@ -490,9 +494,12 @@ func (s3fs *S3FS) deleteListImpl(input *s3.DeleteObjectsInput, pf ProgressFuncti
 		}
 
 		//flush any remaining deletes
-		err := s3fs.flushDeletes(delBuffer)
-		if err != nil {
-			log.Printf("Error in batch delete operation: %s\n", err)
+		errs := s3fs.flushDeletes(delBuffer)
+		if len(errs) > 0 {
+			log.Println("Error in batch delete operation")
+			for _, err := range errs {
+				log.Println(err)
+			}
 		}
 	}
 	return errs
