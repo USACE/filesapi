@@ -302,7 +302,13 @@ func NewFileStore(fsconfig any) (FileStore, error) {
 			return nil, err
 		}
 
-		s3Client := s3.NewFromConfig(cfg)
+		f := []func(o *s3.Options){}
+		if scType.AltEndpoint != "" {
+			f = append(f, func(o *s3.Options) { o.BaseEndpoint = &scType.AltEndpoint })
+		}
+
+		s3Client := s3.NewFromConfig(cfg, f...)
+
 		fs := S3FS{
 			s3client:  s3Client,
 			config:    &scType,

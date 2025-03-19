@@ -47,8 +47,9 @@ func TestStaticCreds(t *testing.T) {
 			S3Id:  os.Getenv("AWS_ACCESS_KEY_ID"),
 			S3Key: os.Getenv("AWS_SECRET_ACCESS_KEY"),
 		},
-		S3Region: os.Getenv("AWS_REGION"),
-		S3Bucket: os.Getenv("AWS_BUCKET"),
+		S3Region:    os.Getenv("AWS_REGION"),
+		S3Bucket:    os.Getenv("AWS_BUCKET"),
+		AltEndpoint: os.Getenv("AWS_ENDPOINT"),
 	}
 
 	fs, err := NewFileStore(config)

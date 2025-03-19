@@ -111,6 +111,7 @@ type S3FSConfig struct {
 	S3Bucket    string
 	Delimiter   string
 	MaxKeys     int32
+	AltEndpoint string
 	Credentials any
 	AwsOptions  []func(*config.LoadOptions) error
 }
