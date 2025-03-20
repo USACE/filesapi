@@ -1,6 +1,8 @@
 module github.com/usace/filesapi
 
-go 1.18
+go 1.22
+
+toolchain go1.23.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.24.1
@@ -25,6 +27,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.18.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.7 // indirect
-	github.com/aws/smithy-go v1.19.0 // indirect
+	github.com/aws/smithy-go v1.22.3 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )

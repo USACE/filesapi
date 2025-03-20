@@ -304,9 +304,15 @@ func NewFileStore(fsconfig any) (FileStore, error) {
 
 		f := []func(o *s3.Options){}
 		if scType.AltEndpoint != "" {
-			f = append(f, func(o *s3.Options) { o.BaseEndpoint = &scType.AltEndpoint })
-		}
+			//cant use BaseEndpoint resolver since the driver will modify the domain values
+			//when the domain is not an IP address.  I'm leaving this line in but commented out for now
+			//since I might add separate support for a BasedEndpoint
+			//f = append(f, func(o *s3.Options) { o.BaseEndpoint = &scType.AltEndpoint })
 
+			//the solution for a static endpoint is to implement our own static resolver
+			endpointUrl := fmt.Sprintf("%s/%s", scType.AltEndpoint, scType.S3Bucket)
+			f = append(f, func(o *s3.Options) { o.EndpointResolverV2 = &StaticResolver{Url: endpointUrl} })
+		}
 		s3Client := s3.NewFromConfig(cfg, f...)
 
 		fs := S3FS{

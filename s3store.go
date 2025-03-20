@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -18,7 +19,25 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 )
+
+// Static resolver for EndpointResolverV2.  This is an option to support
+// local development with minio better than we get with the BaseEndpoint resolver
+// Note that to work with a bucket, the endpoint should include the bucket name.
+// for example if running minio on localhost port 9000, to access a bucket named 'mybucket'
+// the StaticResolver url should be 'http://localhost:9000/mybucket'
+type StaticResolver struct {
+	Url string
+}
+
+func (sr *StaticResolver) ResolveEndpoint(ctx context.Context, params s3.EndpointParameters) (smithyendpoints.Endpoint, error) {
+	u, err := url.Parse(sr.Url)
+	if err != nil {
+		return smithyendpoints.Endpoint{}, err
+	}
+	return smithyendpoints.Endpoint{URI: *u}, nil
+}
 
 const max_copy_chunk_size = 5 * 1024 * 1024
 const max_put_object_copy_size = 5000 * 1024 * 1024
